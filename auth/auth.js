@@ -5,14 +5,14 @@ const jwt = require("jsonwebtoken");
  * @param {*} role 
  * @returns 
  */
-function createTokens(req,role) {
+function createTokens(req,role,uniqid) {
  const {userName} =req.body;
   const accessToken = jwt.sign(
-    { userName:userName,role:role},
+    { userName:userName,role:role,uniqid:uniqid},
     process.env.ACCESS_TOKEN_SECRET
   );
   const refreshToken = jwt.sign(
-    {userName:userName,role:role},
+    {userName:userName,role:role,uniqid:uniqid},
     process.env.REFRESH_TOKEN_SECRET
     );
   return { accessToken:accessToken, refreshToken:refreshToken };

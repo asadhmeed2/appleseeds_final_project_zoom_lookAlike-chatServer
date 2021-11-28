@@ -1,5 +1,7 @@
 const userModule = require("../modules/user.module");
 const registerModule = require("../modules/registerSecretNumber.module");
+const {deleteSecretNumber} = require("../userController/admin.controller")
+const { v4: uuidv4 } = require('uuid');
 const auth = require("../auth/auth");
 
 
@@ -13,51 +15,85 @@ const register = (req, res) => {
       userModule.findOne({ email: email }, (err, data) => {
         if (err) {
           return res.status(401).send("user already exist");
+        }if(data){
+          return res.status(401).send("user already exist");
         }
-        const tokens =  auth.createTokens(req, "user");
-        // return res.json({ token: tokens})
-        console.log(tokens);
         const user = new userModule({
           userName,
           email,
           password,
           role: "user",
-          refreshToken: tokens.refreshToken,
-          registerNumber: registerNumber
         });
         deleteSecretNumber(registerNumber);
         user.save();
         return res.status(200).json({
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
+         msg: "registered successfully"
         });
       });
     })
 };
-
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
 const login = (req, res) => {
   const { email, password } = req.body;
+  const uniqid=uuidv4()// unique id to adentify the user when logout
   userModule.findOne({ email: email }, (err, data) => {
     if (err) {
-      return res.status(401).send("user does not exist");
+      return res.status(401).send({msg:"email or password incorrect"});
     }
     if (password === data.password) {
-      const { accessToken, refreshToken } = auth.createTokens(req, data.role);
-      userModule.findByIdAndUpdate(
-        data._id,
-        { refreshToken: refreshToken },
-        (err, data) => {
-          if (err) return res.status(401).send("user does not exist");
-          userModule.findByIdAndUpdate(data._id,{refreshToken: refreshToken},(err,data)=>{
-            if (err) {
-              return res.status(401).json({msg:"data base error",error:err})
+      if(data.role !== "admin"){
+        userModule.find({role: "admin"},(err,data) => {
+          if (err) {
+            return false;
+          }
+          if(!data){
+            return false;
+          }
+          if(data){
+            let adminIsLogedin=false;
+            data.forEach(user => {
+              
+              if(user.islogedin){
+                adminIsLogedin= true;
+              }
+            })
+            if(!adminIsLogedin){
+              return res.status(401).json({msg:"the host is not loged in",adminLogedIn:false});
+            }else{
+
+              const { accessToken, refreshToken } = auth.createTokens(req, data.role,uniqid);
+              userModule.findByIdAndUpdate(
+                data._id,
+                { refreshToken: refreshToken ,islogedin:true ,uniqid:uniqid},
+                (err, data) => {
+                  if (err) return res.status(401).send("user does not exist");
+                    return res
+                      .status(200)
+                      .send({ accessToken: accessToken, refreshToken: refreshToken });
+                }
+              );
             }
-            return res
-              .status(200)
-              .send({ accessToken: accessToken, refreshToken: refreshToken });
-          })
-        }
-      );
+          }
+        })
+      }else{
+        const { accessToken, refreshToken } = auth.createTokens(req, data.role,uniqid);
+        userModule.findByIdAndUpdate(
+          data._id,
+          { refreshToken: refreshToken ,islogedin:true,uniqid:uniqid},
+          (err, data) => {
+            if (err) return res.status(401).send("user does not exist");
+              return res
+                .status(200)
+                .send({ accessToken: accessToken, refreshToken: refreshToken });
+          }
+        );
+      }
+    }else{
+      return res.status(401).json({msg:"email or password incorrect"})
     }
   });
 };
@@ -78,8 +114,8 @@ const logoutToAllUsers = () => {
   });
 };
 const logout = (req, res) => {
-  const { userName } = req.user;
-  userModule.findOne({ userName: userName }, (err, data) => {
+  const { uniqid } = req.user;
+  userModule.findOne({ uniqid: uniqid }, (err, data) => {
     if (err) {
       return res.status(401).send("user does not exist");
     }
@@ -89,7 +125,7 @@ const logout = (req, res) => {
     }
     userModule.findByIdAndUpdate(
       data._id,
-      { refreshToken: "" },
+      { refreshToken: "" ,islogedin:false},
       (err, data) => {
         if (err) return res.status(401).send("user does not exist");
         return res
@@ -109,7 +145,4 @@ module.exports = {
   register,
   login,
   logout,
-  addSecretNumber,
-  deleteSecretNumbers,
-  deleteSecretNumber,
 };

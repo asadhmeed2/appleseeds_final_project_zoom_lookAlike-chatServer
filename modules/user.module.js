@@ -25,10 +25,18 @@ const userModule = new UserSchema({
     type: String,
     required: true,
   },
-  registerNumber: {
-    type: String,
-    required: true,
+  // isActive: {
+  //   type: Boolean,
+  //   default: false
+  // }
+  islogedin:{
+    type: Boolean,
+    default: false
   },
+  uniqid:{
+    type:String,
+    default:""
+  }
 });
 
 module.exports = mongoose.model("zoomusers", userModule);
