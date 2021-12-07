@@ -20,6 +20,7 @@ io.on("connection",(socket)=>{
     })
     socket.on("message",({userName,message})=>{
         messages.push({userName:userName,message:message})
+        console.log("userName: " + userName,"message "+message);
         io.emit("all messages", messages);               
       })
       socket.on("disconnect",()=>{
