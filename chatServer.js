@@ -11,8 +11,7 @@ let users=[];
 
 io.on("connection",(socket)=>{
     socket.on("user joined",(user)=>{
-        console.log("user joined");
-        
+        console.log("user joined",user.id);
         users.push({userName:user.userName,id:user.id});
         socket.join(user.roomID)
     })
@@ -20,9 +19,7 @@ io.on("connection",(socket)=>{
         io.emit("all messages", messages);               
     })
     socket.on("message",({userName,message})=>{
-        console.log("userName",userName);
         messages.push({userName:userName,message:message})
-        console.log("userName: " + userName,"message "+message);
         io.emit("all messages", messages);               
       })
       socket.on("disconnect",()=>{
