@@ -1,7 +1,7 @@
-# grope video chat web app normal chat server
+# group video chat web app normal chat server
 
 ## Decription
-a server application for private grope [video chat app](https://github.com/newasad/appleseeds_final_project_zoom_lookAlike) 
+a server application for private group [video chat app](https://github.com/newasad/appleseeds_final_project_zoom_lookAlike) 
 normal chat
 
 ## Technologies
